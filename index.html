@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>চুম্মা বাবা</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        body {
+            font-family: monospace;
+            background: #000;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .game-container {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            touch-action: none;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .subject-image {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 4px;
+            border: 2px solid #0f0;
+            object-fit: cover;
+            cursor: move;
+            z-index: 10;
+        }
+
+        .shoe {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            pointer-events: auto;
+            z-index: 5;
+            will-change: transform;
+            transition: opacity 0.2s, transform 0.2s;
+            cursor: pointer;
+        }
+
+        .shoe:hover {
+            transform: scale(1.1);
+        }
+
+        .shoe.destroyed {
+            opacity: 0;
+            transform: scale(0) rotate(180deg);
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #f00;
+            z-index: 1000;
+            display: none;
+            width: 300px;
+            max-width: 90vw;
+        }
+
+        .game-over h2 {
+            color: #f00;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .stats {
+            color: #0f0;
+            font-size: 18px;
+            margin: 15px 0;
+        }
+
+        .restart-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .restart-btn:hover {
+            background: #0c0;
+        }
+
+        .sword-line {
+            position: absolute;
+            pointer-events: none;
+            transform-origin: 0 50%;
+            z-index: 6;
+            border-radius: 2px;
+        }
+
+        .explosion {
+            position: absolute;
+            pointer-events: none;
+            z-index: 7;
+        }
+
+        .combo-text {
+            position: absolute;
+            color: #ff0;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 8;
+            text-shadow: 0 0 10px #ff0;
+            animation: comboPop 0.8s ease-out forwards;
+        }
+
+        @keyframes comboPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .power-up {
+            position: absolute;
+            width: 50px;
+            height: 70px;
+            border-radius: 8px;
+            z-index: 9;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            padding: 5px;
+            border: 2px solid white;
+        }
+
+        .power-up:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .power-up.ready {
+            border: 2px solid #0f0;
+            box-shadow: 0 0 10px #0f0;
+            animation: pulseReady 1s infinite;
+        }
+
+        @keyframes pulseReady {
+            0% { box-shadow: 0 0 5px #0f0; }
+            50% { box-shadow: 0 0 15px #0f0; }
+            100% { box-shadow: 0 0 5px #0f0; }
+        }
+
+        .power-up-icon {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .power-up-life {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .active-item-life {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 25;
+            text-align: center;
+            min-width: 80px;
+            border: 1px solid #0f0;
+        }
+
+        .time-slow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 255, 0.2);
+            pointer-events: none;
+            z-index: 20;
+            display: none;
+        }
+
+        .score-popup {
+            position: absolute;
+            color: #0f0;
+            font-size: 20px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 8;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+        .bomb-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .shield {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 3px dashed #00f;
+            pointer-events: none;
+            z-index: 11;
+            opacity: 0.5;
+            display: none;
+        }
+
+        .mini-game {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #0f0;
+            z-index: 100;
+            display: none;
+            text-align: center;
+            color: white;
+            max-width: 90vw;
+        }
+
+        .mini-game h3 {
+            color: #0f0;
+            margin-bottom: 15px;
+        }
+
+        .target {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #f00;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .bonus-points {
+            position: absolute;
+            color: #ff0;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 12;
+            pointer-events: none;
+            animation: bonusFloat 2s ease-out forwards;
+        }
+
+        @keyframes bonusFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.3); opacity: 0; }
+        }
+
+        .difficulty-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f00;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #f00;
+            z-index: 30;
+            pointer-events: none;
+            animation: warningPulse 1s ease-in-out 3;
+            display: none;
+            text-align: center;
+            max-width: 90vw;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        .help-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #0f0;
+            border-radius: 50%;
+            color: #0f0;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .help-btn:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px #0f0;
+        }
+
+        .instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .instructions-content {
+            background: rgba(0, 20, 0, 0.9);
+            border: 2px solid #0f0;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 800px;
+            width: 90%;
+            margin: 20px auto;
+            color: #0f0;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .instructions-content h2 {
+            color: #0f0;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            border-bottom: 2px solid #0f0;
+            padding-bottom: 10px;
+            position: sticky;
+            top: 0;
+            background: rgba(0, 20, 0, 0.9);
+            z-index: 1;
+        }
+
+        .instructions-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 40, 0, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #0f0;
+        }
+
+        .instructions-section h3 {
+            color: #ff0;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .instructions-section p {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .instructions-section ul {
+            margin-left: 18px;
+            margin-bottom: 10px;
+        }
+
+        .instructions-section li {
+            margin-bottom: 4px;
+            line-height: 1.3;
+            font-size: 14px;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 0 3px;
+            font-size: 13px;
+        }
+
+        .close-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: bold;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .close-btn:hover {
+            background: #0c0;
+        }
+
+        .item-description {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        .item-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            width: 30px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .item-text {
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .pause-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1500;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #0f0;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .pause-overlay p {
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #0f0;
+        }
+
+        .resume-btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .resume-btn:hover {
+            background: #0c0;
+        }
+
+        .instructions-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .instructions-content::-webkit-scrollbar-track {
+            background: rgba(0, 40, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .instructions-content::-webkit-scrollbar-thumb {
+            background: #0f0;
+            border-radius: 4px;
+        }
+
+        .instructions-content::-webkit-scrollbar-thumb:hover {
+            background: #0c0;
+        }
+
+        .bomb-shockwave {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,100,0,0.8) 0%, rgba(255,50,0,0.6) 50%, rgba(255,0,0,0) 100%);
+            z-index: 95;
+            pointer-events: none;
+            transform-origin: center;
+        }
+
+        .bomb-debris {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff5500;
+            border-radius: 50%;
+            z-index: 96;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <img src="imageOfSubject.png" alt="Subject" class="subject-image" id="subjectImage">
+        <div class="shield" id="shield"></div>
+        
+        <div class="time-slow" id="timeSlow"></div>
+        <div class="bomb-flash" id="bombFlash"></div>
+        
+        <div class="difficulty-warning" id="difficultyWarning"></div>
+        
+        <div class="mini-game" id="miniGame">
+            <h3>BONUS ROUND!</h3>
+            <p>Click the red targets!</p>
+            <p id="miniGameTime">Time: 5s</p>
+            <p id="miniGameScore">Targets: 0</p>
+        </div>
+        
+        <div class="game-over" id="gameOverScreen">
+            <h2>GAME OVER</h2>
+            <div class="stats">Score: <span id="finalScore">0</span></div>
+            <div class="stats">Time: <span id="finalTime">0s</span></div>
+            <div class="stats">Max Combo: <span id="finalCombo">0</span></div>
+            <div class="stats">Bonus Round Score: <span id="finalBonus">0</span></div>
+            <div class="stats" id="finalStage">Stage: Easy</div>
+            <button class="restart-btn" id="restartBtn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <div class="help-btn" id="helpBtn">i</div>
+
+    <div class="instructions-overlay" id="instructionsOverlay">
+        <div class="instructions-content">
+            <h2>ATTACK PATWARI - GAME MANUAL</h2>
+            
+            <div class="instructions-section">
+                <h3>🎮 GAME OBJECTIVE</h3>
+                <p>Protect your photo from attacking shoes! Destroy shoes before they reach your photo. The longer you survive, the higher your score!</p>
+            </div>
+
+            <div class="instructions-section">
+                <h3>🕹️ CONTROLS</h3>
+                <p><span class="key">MOUSE DRAG</span> - Draw sword lines to destroy shoes</p>
+                <p><span class="key">CLICK</span> - Click on shoes to destroy them directly</p>
+                <p><span class="key">DRAG & DROP</span> - Move your photo or power-ups around</p>
+            </div>
+
+            <div class="instructions-section">
+                <h3>⚡ POWER-UP ITEMS</h3>
+                <p>When shoes are destroyed, they may drop power-ups. Collect and use them strategically:</p>
+                
+                <div class="item-description">
+                    <div class="item-icon">⏱️</div>
+                    <div class="item-text">
+                        <strong>SLOW TIME</strong> - Slows down all shoes for 5 seconds. Gives you time to breathe!
+                    </div>
+                </div>
+                
+                <div class="item-description">
+                    <div class="item-icon">2️⃣</div>
+                    <div class="item-text">
+                        <strong>DOUBLE SCORE</strong> - Doubles your current score instantly. Best used when you have high score!
+                    </div>
+                </div>
+                
+                <div class="item-description">
+                    <div class="item-icon">💣</div>
+                    <div class="item-text">
+                        <strong>BOMB</strong> - Destroys ALL shoes on screen instantly and gives bonus points!
+                    </div>
+                </div>
+                
+                <div class="item-description">
+                    <div class="item-icon">🛡️</div>
+                    <div class="item-text">
+                        <strong>SHIELD</strong> - Protects your photo from shoes for 8 seconds. Invincibility!
+                    </div>
+                </div>
+                
+                <div class="item-description">
+                    <div class="item-icon">🎯</div>
+                    <div class="item-text">
+                        <strong>BONUS ROUND</strong> - Chance to enter bonus round for extra points!
+                    </div>
+                </div>
+                
+                <p><strong>How to use power-ups:</strong></p>
+                <ol>
+                    <li>Drag the power-up to your desired location</li>
+                    <li>Click on it to activate</li>
+                    <li><strong>Note:</strong> Power-up life only decreases AFTER activation</li>
+                </ol>
+            </div>
+
+            <div class="instructions-section">
+                <h3>📊 SCORING SYSTEM</h3>
+                <ul>
+                    <li>Each shoe destroyed: <strong>100 points</strong></li>
+                    <li>Combo bonus: <strong>+50 points</strong> for every 3x combo</li>
+                    <li>Stage multipliers: Easy (1x), Medium (1.5x), Hard (2.5x)</li>
+                    <li>Bonus round targets: <strong>500 points</strong> each</li>
+                </ul>
+            </div>
+
+            <div class="instructions-section">
+                <h3>📈 DIFFICULTY LEVELS</h3>
+                <p><strong>Easy Mode:</strong> 0-30 seconds, slower shoes, fewer enemies</p>
+                <p><strong>Medium Mode:</strong> 30-60 seconds, faster pace, more enemies</p>
+                <p><strong>Hard Mode:</strong> After 60 seconds, intense difficulty with increasing challenge over time!</p>
+            </div>
+
+            <div class="instructions-section">
+                <h3>💡 PRO TIPS</h3>
+                <ul>
+                    <li>Keep moving your photo to avoid clusters of shoes</li>
+                    <li>Save bomb power-ups for when you're overwhelmed</li>
+                    <li>Use slow time when many shoes are on screen</li>
+                    <li>Activate shield when you need to reposition safely</li>
+                    <li>Build combos by destroying multiple shoes quickly</li>
+                    <li>Place power-ups in safe areas before activating them</li>
+                </ul>
+            </div>
+
+            <button class="close-btn" id="closeInstructionsBtn">CLOSE & RESUME GAME</button>
+        </div>
+    </div>
+
+    <div class="pause-overlay" id="pauseOverlay">
+        <p>GAME PAUSED</p>
+        <button class="resume-btn" id="resumeBtn">RESUME</button>
+    </div>
+
+    <script>
+        (function() {
+            const gameContainer = document.getElementById('gameContainer');
+            const subjectImage = document.getElementById('subjectImage');
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const finalScore = document.getElementById('finalScore');
+            const finalTime = document.getElementById('finalTime');
+            const finalStage = document.getElementById('finalStage');
+            const finalCombo = document.getElementById('finalCombo');
+            const finalBonus = document.getElementById('finalBonus');
+            const restartBtn = document.getElementById('restartBtn');
+            const timeSlow = document.getElementById('timeSlow');
+            const bombFlash = document.getElementById('bombFlash');
+            const shield = document.getElementById('shield');
+            const miniGame = document.getElementById('miniGame');
+            const miniGameTime = document.getElementById('miniGameTime');
+            const miniGameScore = document.getElementById('miniGameScore');
+            const difficultyWarning = document.getElementById('difficultyWarning');
+            const helpBtn = document.getElementById('helpBtn');
+            const instructionsOverlay = document.getElementById('instructionsOverlay');
+            const closeInstructionsBtn = document.getElementById('closeInstructionsBtn');
+            const pauseOverlay = document.getElementById('pauseOverlay');
+            const resumeBtn = document.getElementById('resumeBtn');
+
+            const POWER_UP_SPAWN_CHANCE = 0.03;
+            const POWER_UP_LIFE_DECREASE_RATE = 0.8;
+            const MAX_ACTIVE_POWER_UPS = 3;
+            const EASY_SHOE_MIN = 8;
+            const EASY_SHOE_MAX = 15;
+            const EASY_SHOE_SPAWN_RATE = 0.025;
+            const BONUS_ROUND_CHANCE = 0.15;
+
+            let score = 0;
+            let gameTime = 0;
+            let gameActive = true;
+            let shoes = [];
+            let isDraggingPhoto = false;
+            let photoX = 0;
+            let photoY = 0;
+            let isCutting = false;
+            let cutStartPoint = null;
+            let stage = 'easy';
+            let stageTimer = 0;
+            let gameTimer = null;
+            let swordLines = [];
+            let lastShoeSpawn = 0;
+            let shoeSpawnInterval = 1200;
+            let swordPoints = [];
+            let combo = 0;
+            let maxCombo = 0;
+            let comboTimeout = null;
+            let powerUps = [];
+            let isSlowTime = false;
+            let slowTimeEnd = 0;
+            let isShieldActive = false;
+            let shieldEnd = 0;
+            let bonusRoundScore = 0;
+            let miniGameActive = false;
+            let miniGameTimer = 0;
+            let targets = [];
+            let miniGameInterval = null;
+            let hardModeMultiplier = 1.0;
+            let currentDifficultyLevel = 0;
+            let activeItemLifeDisplay = null;
+            let isGamePaused = false;
+            let gamePausedTime = 0;
+            let pauseStartTime = 0;
+
+            const stageConfig = {
+                easy: { 
+                    baseSpeed: 0.7, 
+                    minShoes: EASY_SHOE_MIN,
+                    maxShoes: EASY_SHOE_MAX,
+                    spawnRate: EASY_SHOE_SPAWN_RATE,
+                    minSpawnTime: 1200, 
+                    maxSpawnTime: 1800,
+                    swordWidth: 8,
+                    scoreMultiplier: 1,
+                    difficultyIncreaseInterval: 9999
+                },
+                medium: { 
+                    baseSpeed: 1.4, 
+                    minShoes: 6, 
+                    maxShoes: 12, 
+                    spawnRate: 0.03, 
+                    minSpawnTime: 700, 
+                    maxSpawnTime: 1100,
+                    swordWidth: 10,
+                    scoreMultiplier: 1.5,
+                    difficultyIncreaseInterval: 20
+                },
+                hard: { 
+                    baseSpeed: 2.2, 
+                    minShoes: 10, 
+                    maxShoes: 25, 
+                    spawnRate: 0.05, 
+                    minSpawnTime: 300, 
+                    maxSpawnTime: 600,
+                    swordWidth: 12,
+                    scoreMultiplier: 2.5,
+                    difficultyIncreaseInterval: 15
+                }
+            };
+
+            const shoeTypes = ['👟', '🥾', '👠', '👞', '🩴', '🥿', '👡', '🧦'];
+            const shoeColors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff', '#f90', '#90f'];
+            const powerUpTypes = ['bomb', 'slow', 'shield', 'double', 'bonus'];
+
+            function init() {
+                photoX = (window.innerWidth - 120) / 2;
+                photoY = (window.innerHeight - 120) / 2;
+                subjectImage.style.left = photoX + 'px';
+                subjectImage.style.top = photoY + 'px';
+                shield.style.left = (photoX - 15) + 'px';
+                shield.style.top = (photoY - 15) + 'px';
+                
+                setupEventListeners();
+                spawnInitialShoes();
+                requestAnimationFrame(gameLoop);
+                startGameTimer();
+            }
+
+            function setupEventListeners() {
+                subjectImage.addEventListener('mousedown', startPhotoDrag);
+                subjectImage.addEventListener('touchstart', startPhotoDrag);
+                
+                gameContainer.addEventListener('mousedown', startCut);
+                gameContainer.addEventListener('mousemove', doCut);
+                gameContainer.addEventListener('mouseup', endCut);
+                
+                gameContainer.addEventListener('touchstart', startCut);
+                gameContainer.addEventListener('touchmove', doCut);
+                gameContainer.addEventListener('touchend', endCut);
+                
+                document.addEventListener('mouseup', endPhotoDrag);
+                document.addEventListener('touchend', endPhotoDrag);
+                
+                restartBtn.addEventListener('click', restartGame);
+                helpBtn.addEventListener('click', showInstructions);
+                closeInstructionsBtn.addEventListener('click', hideInstructions);
+                resumeBtn.addEventListener('click', resumeGame);
+                
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'b' || e.key === 'B') {
+                        createBombExplosion();
+                    }
+                    if (e.key === 'p' || e.key === 'P') {
+                        togglePause();
+                    }
+                });
+            }
+
+            function togglePause() {
+                if (isGamePaused) {
+                    resumeGame();
+                } else {
+                    pauseGame();
+                }
+            }
+
+            function pauseGame() {
+                if (!gameActive || isGamePaused) return;
+                isGamePaused = true;
+                pauseStartTime = Date.now();
+                pauseOverlay.style.display = 'flex';
+                clearInterval(gameTimer);
+            }
+
+            function resumeGame() {
+                if (!isGamePaused) return;
+                isGamePaused = false;
+                pauseOverlay.style.display = 'none';
+                startGameTimer();
+            }
+
+            function showInstructions() {
+                pauseGame();
+                instructionsOverlay.style.display = 'block';
+            }
+
+            function hideInstructions() {
+                instructionsOverlay.style.display = 'none';
+                resumeGame();
+            }
+
+            function startPhotoDrag(e) {
+                if (isGamePaused) return;
+                e.preventDefault();
+                isDraggingPhoto = true;
+            }
+
+            function endPhotoDrag() {
+                isDraggingPhoto = false;
+            }
+
+            function startCut(e) {
+                if (!gameActive || miniGameActive || isGamePaused) return;
+                
+                if (e.target.classList.contains('power-up') || 
+                    e.target.closest('.power-up')) {
+                    return;
+                }
+                
+                isCutting = true;
+                const point = getEventPoint(e);
+                cutStartPoint = point;
+                swordPoints = [point];
+                checkSwordHit(point.x, point.y);
+            }
+
+            function doCut(e) {
+                if (!isCutting || miniGameActive || isGamePaused) return;
+                
+                const point = getEventPoint(e);
+                
+                if (isDraggingPhoto) {
+                    photoX = point.x - 60;
+                    photoY = point.y - 60;
+                    photoX = Math.max(0, Math.min(window.innerWidth - 120, photoX));
+                    photoY = Math.max(0, Math.min(window.innerHeight - 120, photoY));
+                    subjectImage.style.left = photoX + 'px';
+                    subjectImage.style.top = photoY + 'px';
+                    shield.style.left = (photoX - 15) + 'px';
+                    shield.style.top = (photoY - 15) + 'px';
+                    return;
+                }
+                
+                if (cutStartPoint && swordPoints.length > 0) {
+                    const lastPoint = swordPoints[swordPoints.length - 1];
+                    const distance = Math.sqrt(
+                        Math.pow(point.x - lastPoint.x, 2) + 
+                        Math.pow(point.y - lastPoint.y, 2)
+                    );
+                    
+                    if (distance > 5) {
+                        swordPoints.push(point);
+                        
+                        if (swordPoints.length >= 2) {
+                            const start = swordPoints[swordPoints.length - 2];
+                            const end = swordPoints[swordPoints.length - 1];
+                            createSwordLine(start, end);
+                            
+                            const segmentPoints = getPointsAlongLine(start, end, 8);
+                            segmentPoints.forEach(p => checkSwordHit(p.x, p.y));
+                        }
+                        
+                        checkSwordHit(point.x, point.y);
+                    }
+                }
+            }
+
+            function getPointsAlongLine(start, end, spacing) {
+                const points = [];
+                const dx = end.x - start.x;
+                const dy = end.y - start.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const steps = Math.floor(distance / spacing);
+                
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps;
+                    points.push({
+                        x: start.x + dx * t,
+                        y: start.y + dy * t
+                    });
+                }
+                return points;
+            }
+
+            function endCut() {
+                isCutting = false;
+                cutStartPoint = null;
+                swordPoints = [];
+            }
+
+            function getEventPoint(e) {
+                if (e.type.includes('touch')) {
+                    return {
+                        x: e.touches[0].clientX,
+                        y: e.touches[0].clientY
+                    };
+                }
+                return {
+                    x: e.clientX,
+                    y: e.clientY
+                };
+            }
+
+            function createSwordLine(start, end) {
+                const line = document.createElement('div');
+                line.className = 'sword-line';
+                
+                const dx = end.x - start.x;
+                const dy = end.y - start.y;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                line.style.left = start.x + 'px';
+                line.style.top = start.y + 'px';
+                line.style.width = length + 'px';
+                line.style.height = stageConfig[stage].swordWidth + 'px';
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.background = `linear-gradient(90deg, 
+                    rgba(0, 255, 0, 0) 0%, 
+                    rgba(0, 255, 0, 0.9) 50%, 
+                    rgba(0, 255, 0, 0) 100%)`;
+                line.style.opacity = '0.9';
+                
+                gameContainer.appendChild(line);
+                swordLines.push(line);
+                
+                setTimeout(() => {
+                    line.style.opacity = '0';
+                    setTimeout(() => {
+                        if (line.parentNode) line.remove();
+                        const index = swordLines.indexOf(line);
+                        if (index > -1) swordLines.splice(index, 1);
+                    }, 200);
+                }, 150);
+            }
+
+            function checkSwordHit(x, y) {
+                const hitRadius = stageConfig[stage].swordWidth * 3.5;
+                let hitCount = 0;
+                
+                for (let i = shoes.length - 1; i >= 0; i--) {
+                    const shoe = shoes[i];
+                    if (shoe.destroyed) continue;
+                    
+                    const shoeCenterX = shoe.x + 30;
+                    const shoeCenterY = shoe.y + 15;
+                    
+                    const dx = shoeCenterX - x;
+                    const dy = shoeCenterY - y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance <= hitRadius) {
+                        destroyShoe(shoe);
+                        hitCount++;
+                    }
+                }
+                
+                if (hitCount > 0) {
+                    addCombo(hitCount);
+                }
+            }
+
+            function createShoe() {
+                if (!gameActive || shoes.length >= getCurrentMaxShoes() || miniGameActive || isGamePaused) return;
+
+                const shoe = document.createElement('div');
+                shoe.className = 'shoe';
+                const type = shoeTypes[Math.floor(Math.random() * shoeTypes.length)];
+                const color = shoeColors[Math.floor(Math.random() * shoeColors.length)];
+                shoe.innerHTML = `<div style="font-size:28px;color:${color}">${type}</div>`;
+                gameContainer.appendChild(shoe);
+                
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+                
+                switch(side) {
+                    case 0: x = -60; y = Math.random() * window.innerHeight; break;
+                    case 1: x = window.innerWidth; y = Math.random() * window.innerHeight; break;
+                    case 2: x = Math.random() * window.innerWidth; y = -30; break;
+                    case 3: x = Math.random() * window.innerWidth; y = window.innerHeight; break;
+                }
+                
+                shoe.style.left = x + 'px';
+                shoe.style.top = y + 'px';
+                
+                const targetX = photoX + 60;
+                const targetY = photoY + 60;
+                
+                const dx = targetX - x;
+                const dy = targetY - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const baseSpeed = stageConfig[stage].baseSpeed * hardModeMultiplier;
+                const speed = (isSlowTime ? baseSpeed * 0.5 : baseSpeed) + Math.random() * 0.3;
+                
+                const shoeObj = {
+                    element: shoe,
+                    x: x,
+                    y: y,
+                    vx: dx / distance * speed,
+                    vy: dy / distance * speed,
+                    targetX: targetX,
+                    targetY: targetY,
+                    destroyed: false
+                };
+                
+                shoes.push(shoeObj);
+                
+                shoe.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    destroyShoe(shoeObj);
+                });
+            }
+
+            function getCurrentMaxShoes() {
+                const config = stageConfig[stage];
+                return Math.min(config.maxShoes * hardModeMultiplier, 40);
+            }
+
+            function destroyShoe(shoe) {
+                if (shoe.destroyed || !gameActive || isGamePaused) return;
+                
+                shoe.destroyed = true;
+                shoe.destroyTime = Date.now();
+                shoe.element.classList.add('destroyed');
+                
+                const baseScore = 100;
+                const comboBonus = Math.floor(combo / 3) * 50;
+                const stageMultiplier = stageConfig[stage].scoreMultiplier * (stage === 'hard' ? hardModeMultiplier : 1);
+                const totalScore = Math.floor((baseScore + comboBonus) * stageMultiplier);
+                
+                score += totalScore;
+                
+                createExplosion(shoe.x + 30, shoe.y + 15);
+                createScorePopup(shoe.x + 30, shoe.y + 15, totalScore);
+                
+                if (Math.random() < POWER_UP_SPAWN_CHANCE && powerUps.length < MAX_ACTIVE_POWER_UPS && !miniGameActive) {
+                    createPowerUp(shoe.x, shoe.y);
+                }
+            }
+
+            function createExplosion(x, y) {
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = x + 'px';
+                explosion.style.top = y + 'px';
+                explosion.style.width = '50px';
+                explosion.style.height = '50px';
+                explosion.style.background = `radial-gradient(circle, rgba(255,255,0,0.8) 0%, rgba(255,0,0,0) 70%)`;
+                explosion.style.borderRadius = '50%';
+                
+                gameContainer.appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.style.transform = 'scale(2)';
+                    explosion.style.opacity = '0';
+                    setTimeout(() => explosion.remove(), 300);
+                }, 50);
+            }
+
+            function createScorePopup(x, y, points) {
+                const popup = document.createElement('div');
+                popup.className = 'score-popup';
+                popup.textContent = `+${points}`;
+                popup.style.left = x + 'px';
+                popup.style.top = y + 'px';
+                
+                gameContainer.appendChild(popup);
+                setTimeout(() => popup.remove(), 1000);
+            }
+
+            function createBombExplosion() {
+                bombFlash.style.opacity = '1';
+                bombFlash.style.transition = 'opacity 0.2s';
+                
+                setTimeout(() => {
+                    bombFlash.style.opacity = '0.8';
+                }, 100);
+                
+                setTimeout(() => {
+                    bombFlash.style.opacity = '0.4';
+                }, 300);
+                
+                setTimeout(() => {
+                    bombFlash.style.opacity = '0.2';
+                }, 600);
+                
+                setTimeout(() => {
+                    bombFlash.style.opacity = '0';
+                }, 1500);
+                
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+                
+                createShockwave(centerX, centerY);
+                createFireRing(centerX, centerY);
+                createDebris(centerX, centerY, 30);
+                
+                let bombCount = 0;
+                
+                shoes.forEach(shoe => {
+                    if (!shoe.destroyed) {
+                        bombCount++;
+                        shoe.destroyed = true;
+                        shoe.element.classList.add('destroyed');
+                        createMegaFireEffect(shoe.x + 30, shoe.y + 15);
+                    }
+                });
+                
+                if (bombCount > 0) {
+                    const bombPoints = bombCount * 300;
+                    score += bombPoints;
+                    
+                    const bonusText = document.createElement('div');
+                    bonusText.className = 'bonus-points';
+                    bonusText.textContent = `NUCLEAR BLAST! +${bombPoints}`;
+                    bonusText.style.left = '50%';
+                    bonusText.style.top = '50%';
+                    bonusText.style.transform = 'translate(-50%, -50%)';
+                    gameContainer.appendChild(bonusText);
+                    setTimeout(() => bonusText.remove(), 2500);
+                }
+            }
+
+            function createShockwave(x, y) {
+                const shockwave = document.createElement('div');
+                shockwave.className = 'bomb-shockwave';
+                shockwave.style.left = x + 'px';
+                shockwave.style.top = y + 'px';
+                shockwave.style.width = '10px';
+                shockwave.style.height = '10px';
+                
+                gameContainer.appendChild(shockwave);
+                
+                let size = 10;
+                const grow = setInterval(() => {
+                    size += 20;
+                    shockwave.style.width = size + 'px';
+                    shockwave.style.height = size + 'px';
+                    shockwave.style.left = (x - size/2) + 'px';
+                    shockwave.style.top = (y - size/2) + 'px';
+                    shockwave.style.opacity = 1 - (size / 1000);
+                    
+                    if (size > 1000) {
+                        clearInterval(grow);
+                        shockwave.remove();
+                    }
+                }, 16);
+            }
+
+            function createFireRing(x, y) {
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * 45) * Math.PI / 180;
+                    const fireRing = document.createElement('div');
+                    fireRing.className = 'explosion';
+                    fireRing.style.left = x + 'px';
+                    fireRing.style.top = y + 'px';
+                    fireRing.style.width = '80px';
+                    fireRing.style.height = '80px';
+                    fireRing.style.background = `radial-gradient(circle, rgba(255,50,0,0.9) 0%, rgba(255,0,0,0.7) 50%, rgba(255,0,0,0) 100%)`;
+                    
+                    gameContainer.appendChild(fireRing);
+                    
+                    setTimeout(() => {
+                        let distance = 0;
+                        const move = setInterval(() => {
+                            distance += 15;
+                            fireRing.style.left = (x + Math.cos(angle) * distance - 40) + 'px';
+                            fireRing.style.top = (y + Math.sin(angle) * distance - 40) + 'px';
+                            fireRing.style.opacity = 1 - (distance / 400);
+                            
+                            if (distance > 400) {
+                                clearInterval(move);
+                                fireRing.remove();
+                            }
+                        }, 16);
+                    }, i * 50);
+                }
+            }
+
+            function createDebris(x, y, count) {
+                for (let i = 0; i < count; i++) {
+                    const debris = document.createElement('div');
+                    debris.className = 'bomb-debris';
+                    debris.style.left = x + 'px';
+                    debris.style.top = y + 'px';
+                    
+                    gameContainer.appendChild(debris);
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 5 + Math.random() * 10;
+                    let distance = 0;
+                    
+                    const moveDebris = setInterval(() => {
+                        distance += speed;
+                        debris.style.left = (x + Math.cos(angle) * distance) + 'px';
+                        debris.style.top = (y + Math.sin(angle) * distance) + 'px';
+                        debris.style.opacity = 1 - (distance / 200);
+                        
+                        if (distance > 200) {
+                            clearInterval(moveDebris);
+                            debris.remove();
+                        }
+                    }, 16);
+                }
+            }
+
+            function createMegaFireEffect(x, y) {
+                const fire = document.createElement('div');
+                fire.className = 'explosion';
+                fire.style.left = x + 'px';
+                fire.style.top = y + 'px';
+                fire.style.width = '100px';
+                fire.style.height = '100px';
+                fire.style.background = `radial-gradient(circle, 
+                    rgba(255,100,0,1) 0%, 
+                    rgba(255,50,0,0.8) 30%, 
+                    rgba(255,0,0,0.6) 60%, 
+                    rgba(255,0,0,0) 100%)`;
+                fire.style.boxShadow = '0 0 40px #ff5500';
+                
+                gameContainer.appendChild(fire);
+                
+                setTimeout(() => {
+                    fire.style.transform = 'scale(2.5)';
+                    fire.style.opacity = '0';
+                    setTimeout(() => fire.remove(), 500);
+                }, 50);
+            }
+
+            function addCombo(hitCount) {
+                combo += hitCount;
+                if (combo > maxCombo) maxCombo = combo;
+                
+                clearTimeout(comboTimeout);
+                comboTimeout = setTimeout(() => {
+                    if (combo >= 5) {
+                        showComboText(combo);
+                    }
+                    combo = 0;
+                }, 2000);
+            }
+
+            function showComboText(comboCount) {
+                const comboText = document.createElement('div');
+                comboText.className = 'combo-text';
+                comboText.textContent = `${comboCount}x COMBO!`;
+                comboText.style.left = '50%';
+                comboText.style.top = '50%';
+                comboText.style.transform = 'translate(-50%, -50%)';
+                
+                gameContainer.appendChild(comboText);
+                setTimeout(() => comboText.remove(), 800);
+            }
+
+            function createPowerUp(x, y) {
+                const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+                const powerUp = document.createElement('div');
+                powerUp.className = 'power-up';
+                powerUp.dataset.type = type;
+                
+                let color, emoji;
+                switch(type) {
+                    case 'bomb':
+                        color = '#f00';
+                        emoji = '💣';
+                        break;
+                    case 'slow':
+                        color = '#00f';
+                        emoji = '⏱️';
+                        break;
+                    case 'shield':
+                        color = '#0ff';
+                        emoji = '🛡️';
+                        break;
+                    case 'double':
+                        color = '#ff0';
+                        emoji = '2️⃣';
+                        break;
+                    case 'bonus':
+                        color = '#f0f';
+                        emoji = '🎯';
+                        break;
+                }
+                
+                powerUp.style.background = color;
+                powerUp.style.left = x + 'px';
+                powerUp.style.top = y + 'px';
+                powerUp.innerHTML = `
+                    <div class="power-up-icon">${emoji}</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="background:white;width:100%"></div>
+                    </div>
+                `;
+                
+                const lifeDisplay = document.createElement('div');
+                lifeDisplay.className = 'power-up-life';
+                lifeDisplay.textContent = '100%';
+                powerUp.appendChild(lifeDisplay);
+                
+                setTimeout(() => {
+                    powerUp.classList.add('ready');
+                }, 500);
+                
+                gameContainer.appendChild(powerUp);
+                
+                powerUp.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    activatePowerUp(type, powerUp);
+                });
+                
+                const powerUpObj = {
+                    element: powerUp,
+                    type: type,
+                    life: 100,
+                    lifeDisplay: lifeDisplay,
+                    isActive: false,
+                    lifeDecreaseInterval: null
+                };
+                
+                powerUps.push(powerUpObj);
+                
+                powerUp.addEventListener('mouseenter', function() {
+                    lifeDisplay.style.display = 'block';
+                });
+                
+                powerUp.addEventListener('mouseleave', function() {
+                    if (!powerUpObj.isActive) {
+                        lifeDisplay.style.display = 'none';
+                    }
+                });
+                
+                setTimeout(() => {
+                    if (powerUp.parentNode && powerUp.classList.contains('ready') && !powerUpObj.isActive) {
+                        powerUp.remove();
+                        const index = powerUps.indexOf(powerUpObj);
+                        if (index > -1) powerUps.splice(index, 1);
+                    }
+                }, 30000);
+            }
+
+            function activatePowerUp(type, powerUpElement) {
+                const powerUpObj = powerUps.find(p => p.element === powerUpElement);
+                if (!powerUpObj) return;
+                
+                powerUpObj.isActive = true;
+                powerUpObj.element.classList.remove('ready');
+                
+                if (type !== 'bomb') {
+                    showActiveItemLife(powerUpObj);
+                    startPowerUpLifeDecrease(powerUpObj);
+                }
+                
+                powerUpElement.style.transform = 'scale(1.2)';
+                powerUpElement.style.opacity = '0.8';
+                
+                setTimeout(() => {
+                    if (powerUpElement.parentNode) {
+                        powerUpElement.remove();
+                    }
+                    const index = powerUps.indexOf(powerUpObj);
+                    if (index > -1) powerUps.splice(index, 1);
+                }, 500);
+                
+                switch(type) {
+                    case 'bomb':
+                        createBombExplosion();
+                        break;
+                    case 'slow':
+                        isSlowTime = true;
+                        slowTimeEnd = Date.now() + 5000;
+                        timeSlow.style.display = 'block';
+                        setTimeout(() => {
+                            timeSlow.style.display = 'none';
+                            isSlowTime = false;
+                        }, 5000);
+                        break;
+                    case 'shield':
+                        isShieldActive = true;
+                        shieldEnd = Date.now() + 8000;
+                        shield.style.display = 'block';
+                        setTimeout(() => {
+                            shield.style.display = 'none';
+                            isShieldActive = false;
+                        }, 8000);
+                        break;
+                    case 'double':
+                        score *= 2;
+                        const doubleText = document.createElement('div');
+                        doubleText.className = 'bonus-points';
+                        doubleText.textContent = 'DOUBLE SCORE!';
+                        doubleText.style.left = '50%';
+                        doubleText.style.top = '50%';
+                        doubleText.style.transform = 'translate(-50%, -50%)';
+                        gameContainer.appendChild(doubleText);
+                        setTimeout(() => doubleText.remove(), 2000);
+                        break;
+                    case 'bonus':
+                        if (!miniGameActive && Math.random() < BONUS_ROUND_CHANCE) {
+                            startBonusRound();
+                        }
+                        break;
+                }
+            }
+
+            function startPowerUpLifeDecrease(powerUp) {
+                if (powerUp.lifeDecreaseInterval) {
+                    clearInterval(powerUp.lifeDecreaseInterval);
+                }
+                
+                powerUp.lifeDecreaseInterval = setInterval(() => {
+                    if (!gameActive || powerUp.life <= 0 || isGamePaused) {
+                        clearInterval(powerUp.lifeDecreaseInterval);
+                        return;
+                    }
+                    
+                    powerUp.life -= POWER_UP_LIFE_DECREASE_RATE;
+                    if (powerUp.life < 0) powerUp.life = 0;
+                    
+                    if (powerUp.lifeDisplay && powerUp.lifeDisplay.parentNode) {
+                        powerUp.lifeDisplay.textContent = Math.round(powerUp.life) + '%';
+                    }
+                    
+                    if (activeItemLifeDisplay && activeItemLifeDisplay.parentNode) {
+                        activeItemLifeDisplay.textContent = `${getPowerUpName(powerUp.type)}: ${Math.round(powerUp.life)}%`;
+                    }
+                    
+                    if (powerUp.life <= 0) {
+                        clearInterval(powerUp.lifeDecreaseInterval);
+                        if (powerUp.element && powerUp.element.parentNode) {
+                            powerUp.element.remove();
+                        }
+                        const index = powerUps.indexOf(powerUp);
+                        if (index > -1) powerUps.splice(index, 1);
+                    }
+                }, 50);
+            }
+
+            function showActiveItemLife(powerUp) {
+                if (activeItemLifeDisplay && activeItemLifeDisplay.parentNode) {
+                    activeItemLifeDisplay.remove();
+                }
+                
+                activeItemLifeDisplay = document.createElement('div');
+                activeItemLifeDisplay.className = 'active-item-life';
+                activeItemLifeDisplay.textContent = `${getPowerUpName(powerUp.type)}: ${Math.round(powerUp.life)}%`;
+                activeItemLifeDisplay.style.left = '50%';
+                activeItemLifeDisplay.style.top = '20%';
+                activeItemLifeDisplay.style.transform = 'translateX(-50%)';
+                
+                gameContainer.appendChild(activeItemLifeDisplay);
+                
+                setTimeout(() => {
+                    if (activeItemLifeDisplay && activeItemLifeDisplay.parentNode) {
+                        activeItemLifeDisplay.remove();
+                        activeItemLifeDisplay = null;
+                    }
+                }, 10000);
+            }
+
+            function getPowerUpName(type) {
+                switch(type) {
+                    case 'slow': return 'Slow Time';
+                    case 'double': return 'Double Score';
+                    case 'bomb': return 'Bomb';
+                    case 'shield': return 'Shield';
+                    case 'bonus': return 'Bonus Round';
+                    default: return 'Power-up';
+                }
+            }
+
+            function startBonusRound() {
+                miniGameActive = true;
+                miniGameTimer = 10;
+                bonusRoundScore = 0;
+                targets = [];
+                
+                miniGame.style.display = 'block';
+                updateMiniGameDisplay();
+                
+                miniGameInterval = setInterval(() => {
+                    if (isGamePaused) return;
+                    
+                    miniGameTimer--;
+                    updateMiniGameDisplay();
+                    
+                    if (miniGameTimer <= 0) {
+                        endBonusRound();
+                    } else if (miniGameTimer <= 5) {
+                        createRandomTarget();
+                    }
+                }, 1000);
+                
+                createRandomTarget();
+                createRandomTarget();
+                createRandomTarget();
+            }
+
+            function createRandomTarget() {
+                if (targets.length >= 8) return;
+                
+                const target = document.createElement('div');
+                target.className = 'target';
+                
+                const x = Math.random() * (window.innerWidth - 80) + 40;
+                const y = Math.random() * (window.innerHeight - 80) + 40;
+                
+                target.style.left = x + 'px';
+                target.style.top = y + 'px';
+                
+                target.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    bonusRoundScore += 500;
+                    score += 500;
+                    updateMiniGameDisplay();
+                    
+                    createExplosion(x + 20, y + 20);
+                    target.remove();
+                    
+                    const index = targets.indexOf(target);
+                    if (index > -1) targets.splice(index, 1);
+                    
+                    if (miniGameTimer > 2) {
+                        setTimeout(() => createRandomTarget(), 300);
+                    }
+                });
+                
+                gameContainer.appendChild(target);
+                targets.push(target);
+            }
+
+            function updateMiniGameDisplay() {
+                miniGameTime.textContent = `Time: ${miniGameTimer}s`;
+                miniGameScore.textContent = `Bonus: +${bonusRoundScore}`;
+            }
+
+            function endBonusRound() {
+                miniGameActive = false;
+                clearInterval(miniGameInterval);
+                miniGame.style.display = 'none';
+                
+                targets.forEach(target => target.remove());
+                targets = [];
+                
+                if (bonusRoundScore > 0) {
+                    const bonusText = document.createElement('div');
+                    bonusText.className = 'bonus-points';
+                    bonusText.textContent = `BONUS: +${bonusRoundScore}`;
+                    bonusText.style.left = '50%';
+                    bonusText.style.top = '50%';
+                    bonusText.style.transform = 'translate(-50%, -50%)';
+                    
+                    gameContainer.appendChild(bonusText);
+                    setTimeout(() => bonusText.remove(), 2000);
+                }
+            }
+
+            function spawnInitialShoes() {
+                for (let i = 0; i < stageConfig[stage].minShoes; i++) {
+                    setTimeout(() => createShoe(), i * 500);
+                }
+            }
+
+            function spawnShoe() {
+                if (!gameActive || miniGameActive || isGamePaused) return;
+                
+                const config = stageConfig[stage];
+                const currentTime = Date.now();
+                
+                if (currentTime - lastShoeSpawn > shoeSpawnInterval && shoes.length < getCurrentMaxShoes()) {
+                    createShoe();
+                    lastShoeSpawn = currentTime;
+                    
+                    shoeSpawnInterval = (config.minSpawnTime / hardModeMultiplier) + 
+                                      Math.random() * ((config.maxSpawnTime - config.minSpawnTime) / hardModeMultiplier);
+                }
+            }
+
+            function increaseDifficulty() {
+                if (stage !== 'hard') return;
+                
+                currentDifficultyLevel++;
+                hardModeMultiplier = 1.0 + (currentDifficultyLevel * 0.2);
+                
+                if (currentDifficultyLevel % 3 === 0) {
+                    showDifficultyWarning(`DIFFICULTY INCREASED! LEVEL ${currentDifficultyLevel}`);
+                }
+            }
+
+            function showDifficultyWarning(text) {
+                difficultyWarning.textContent = text;
+                difficultyWarning.style.display = 'block';
+                
+                setTimeout(() => {
+                    difficultyWarning.style.display = 'none';
+                }, 2000);
+            }
+
+            function gameLoop() {
+                if (!gameActive || isGamePaused) {
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+                
+                const currentTime = Date.now();
+                
+                if (isSlowTime && currentTime > slowTimeEnd) {
+                    isSlowTime = false;
+                    timeSlow.style.display = 'none';
+                }
+                
+                if (isShieldActive && currentTime > shieldEnd) {
+                    isShieldActive = false;
+                    shield.style.display = 'none';
+                }
+                
+                if (!miniGameActive) {
+                    spawnShoe();
+                }
+                
+                for (let i = shoes.length - 1; i >= 0; i--) {
+                    const shoe = shoes[i];
+                    
+                    if (shoe.destroyed) {
+                        if (currentTime - shoe.destroyTime > 200) {
+                            shoe.element.remove();
+                            shoes.splice(i, 1);
+                        }
+                        continue;
+                    }
+                    
+                    if (!miniGameActive) {
+                        const speedMultiplier = isSlowTime ? 0.5 : 1;
+                        shoe.x += shoe.vx * speedMultiplier;
+                        shoe.y += shoe.vy * speedMultiplier;
+                        
+                        shoe.element.style.left = shoe.x + 'px';
+                        shoe.element.style.top = shoe.y + 'px';
+                        
+                        const shoeCenterX = shoe.x + 30;
+                        const shoeCenterY = shoe.y + 15;
+                        const hitAreaX = photoX + 15;
+                        const hitAreaY = photoY + 15;
+                        
+                        if (!isShieldActive && 
+                            shoeCenterX > hitAreaX && shoeCenterX < hitAreaX + 90 &&
+                            shoeCenterY > hitAreaY && shoeCenterY < hitAreaY + 90) {
+                            gameOver();
+                            return;
+                        }
+                        
+                        if (shoe.x < -100 || shoe.x > window.innerWidth + 100 ||
+                            shoe.y < -100 || shoe.y > window.innerHeight + 100) {
+                            shoe.element.remove();
+                            shoes.splice(i, 1);
+                        }
+                    }
+                }
+                
+                if (!miniGameActive && shoes.length < stageConfig[stage].minShoes * hardModeMultiplier && 
+                    Math.random() < stageConfig[stage].spawnRate * hardModeMultiplier) {
+                    createShoe();
+                    lastShoeSpawn = currentTime;
+                }
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            function startGameTimer() {
+                if (gameTimer) clearInterval(gameTimer);
+                
+                let lastDifficultyIncrease = 0;
+                
+                gameTimer = setInterval(() => {
+                    if (gameActive && !miniGameActive && !isGamePaused) {
+                        gameTime++;
+                        stageTimer++;
+                        
+                        if (stageTimer === 30 && stage === 'easy') {
+                            stage = 'medium';
+                            finalStage.textContent = 'Stage: Medium';
+                            showDifficultyWarning("MEDIUM MODE!");
+                        } else if (stageTimer === 60 && stage === 'medium') {
+                            stage = 'hard';
+                            finalStage.textContent = 'Stage: Hard';
+                            showDifficultyWarning("HARD MODE!");
+                            currentDifficultyLevel = 0;
+                            hardModeMultiplier = 1.0;
+                        }
+                        
+                        if (stage === 'hard') {
+                            const config = stageConfig.hard;
+                            if (stageTimer >= 60 && (stageTimer - 60) % config.difficultyIncreaseInterval === 0) {
+                                if (stageTimer - 60 > lastDifficultyIncrease) {
+                                    increaseDifficulty();
+                                    lastDifficultyIncrease = stageTimer - 60;
+                                }
+                            }
+                        } else if (stage === 'medium') {
+                            const config = stageConfig.medium;
+                            if (stageTimer >= 30 && (stageTimer - 30) % config.difficultyIncreaseInterval === 0) {
+                                if (stageTimer - 30 > lastDifficultyIncrease) {
+                                    increaseDifficulty();
+                                    lastDifficultyIncrease = stageTimer - 30;
+                                }
+                            }
+                        }
+                    }
+                }, 1000);
+            }
+
+            function gameOver() {
+                gameActive = false;
+                finalScore.textContent = score;
+                finalTime.textContent = gameTime + 's';
+                finalCombo.textContent = maxCombo;
+                finalBonus.textContent = bonusRoundScore;
+                finalStage.textContent = 'Stage: ' + stage.charAt(0).toUpperCase() + stage.slice(1) + 
+                                       (stage === 'hard' ? ` (Level ${currentDifficultyLevel})` : '');
+                gameOverScreen.style.display = 'block';
+                
+                clearInterval(gameTimer);
+                if (miniGameInterval) clearInterval(miniGameInterval);
+                
+                if (activeItemLifeDisplay && activeItemLifeDisplay.parentNode) {
+                    activeItemLifeDisplay.remove();
+                    activeItemLifeDisplay = null;
+                }
+                
+                const gameOverMusic = new Audio('music.mp3');
+                gameOverMusic.volume = 0.7;
+                gameOverMusic.play().catch(e => console.log('JavaScript failed to play Yamete Kudassai 🤣:', e));
+            }
+
+            function restartGame() {
+                gameActive = false;
+                miniGameActive = false;
+                isGamePaused = false;
+                
+                shoes.forEach(shoe => shoe.element.remove());
+                shoes = [];
+                
+                swordLines.forEach(line => line.remove());
+                swordLines = [];
+                
+                powerUps.forEach(powerUp => powerUp.element.remove());
+                powerUps = [];
+                
+                targets.forEach(target => target.remove());
+                targets = [];
+                
+                score = 0;
+                gameTime = 0;
+                gameActive = true;
+                stage = 'easy';
+                stageTimer = 0;
+                lastShoeSpawn = 0;
+                combo = 0;
+                maxCombo = 0;
+                isSlowTime = false;
+                isShieldActive = false;
+                bonusRoundScore = 0;
+                hardModeMultiplier = 1.0;
+                currentDifficultyLevel = 0;
+                
+                timeSlow.style.display = 'none';
+                shield.style.display = 'none';
+                bombFlash.style.opacity = '0';
+                miniGame.style.display = 'none';
+                difficultyWarning.style.display = 'none';
+                gameOverScreen.style.display = 'none';
+                instructionsOverlay.style.display = 'none';
+                pauseOverlay.style.display = 'none';
+                
+                photoX = (window.innerWidth - 120) / 2;
+                photoY = (window.innerHeight - 120) / 2;
+                subjectImage.style.left = photoX + 'px';
+                subjectImage.style.top = photoY + 'px';
+                shield.style.left = (photoX - 15) + 'px';
+                shield.style.top = (photoY - 15) + 'px';
+                
+                if (gameTimer) {
+                    clearInterval(gameTimer);
+                }
+                if (miniGameInterval) {
+                    clearInterval(miniGameInterval);
+                }
+                
+                spawnInitialShoes();
+                startGameTimer();
+                requestAnimationFrame(gameLoop);
+            }
+
+            window.onload = init;
+            window.onresize = () => {
+                if (gameActive) {
+                    subjectImage.style.left = Math.max(0, Math.min(window.innerWidth - 120, photoX)) + 'px';
+                    subjectImage.style.top = Math.max(0, Math.min(window.innerHeight - 120, photoY)) + 'px';
+                    shield.style.left = (photoX - 15) + 'px';
+                    shield.style.top = (photoY - 15) + 'px';
+                }
+            };
+        })();
+    </script>
+</body>
+</html>
